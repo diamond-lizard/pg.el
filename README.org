@@ -1,7 +1,6 @@
 * pg.el
 [[http://emarsden.chez.com/downloads/][Eric Marsden's pg.el]] is a socket-level Emacs interface to the PostgreSQL object-relational DBMS. It is capable of automatic coercion from a range of SQL types to the appropriate Emacs Lisp types. Supports large objects (BLOBs).
 
-Version 0.10 2003-02-12, under GNU GPL.
 ** Overview
 This module lets you access the PostgreSQL object-relational DBMS
 from Emacs, using its socket-level frontend/backend protocol. The
@@ -123,3 +122,5 @@ line such as `(require 'pg)' in your emacs initialization file.
  * in a future release I will probably modify the numeric conversion
   routines to return elisp floating point values instead of elisp
   integers, in order to work around possible overflow problems.
+** Version history
+*** [[http://emarsden.chez.com/downloads/pg.el][Version 0.10 2003-02-12 by Eric Marsden]], under GNU GPL.
