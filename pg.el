@@ -937,13 +937,12 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
 ;; blech
 (defun pg:read-char (connection)
   (let ((process (pgcon-process connection))
-        (position (pgcon-position connection)))        
-    (save-excursion
-      (with-current-buffer (process-buffer process)
-        (incf (pgcon-position connection))
-        (if (null (char-after position))
-            (accept-process-output (pgcon-process connection)))
-        (char-after position)))))
+        (position (pgcon-position connection)))
+    (with-current-buffer (process-buffer process)
+      (incf (pgcon-position connection))
+      (if (null (char-after position))
+          (accept-process-output (pgcon-process connection)))
+      (char-after position))))
 
 ;; FIXME should be more careful here; the integer could overflow. I
 ;; wanna real Lisp!
