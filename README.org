@@ -1,0 +1,1 @@
+[[http://emarsden.chez.com/downloads/][Eric Marsden's pg.el]] is a socket-level Emacs interface to the PostgreSQL object-relational DBMS. It is capable of automatic coercion from a range of SQL types to the appropriate Emacs Lisp types. Supports large objects (BLOBs). Version 0.10 2003-02-12, under GNU GPL.
