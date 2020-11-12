@@ -829,8 +829,7 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
          (oid (pg:lo-create connection "rw"))
          (fdout (pg:lo-open connection oid "w"))
          (pos (point-min)))
-    (save-excursion
-      (set-buffer buf)
+    (with-current-buffer buf
       (insert-file-contents-literally filename)
       (while (< pos (point-max))
         (pg:lo-write
