@@ -843,8 +843,7 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
 (defun pg:lo-export (connection oid filename)
   (let* ((buf (get-buffer-create (format " *pg-%d" oid)))
          (fdin (pg:lo-open connection oid "r")))
-    (save-excursion
-      (set-buffer buf)
+    (with-current-buffer buf
       (do ((str (pg:lo-read connection fdin 1024)
                 (pg:lo-read connection fdin 1024)))
           ((or (not str)
