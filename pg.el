@@ -784,7 +784,7 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
                      (t (error "pg:lo-create: bad mode %s" modestr))))
          (oid (pg:fn connection "lo_creat" t mode)))
     (cond ((not (integerp oid))
-           (error "Didn't return an OID" oid))
+           (error "OID '%s' is not an integer" oid))
           ((zerop oid)
            (error "Can't create large object"))
           (t oid))))
