@@ -411,7 +411,10 @@ database (as an opaque type). PORT defaults to 5432, HOST to
     ;; 'binary is equivalent to 'no-conversion on GNU Emacs
     (when (fboundp 'set-buffer-process-coding-system)
       (with-current-buffer buf
-        (set-buffer-process-coding-system 'binary 'binary)
+        (set-process-coding-system
+         (process-buffer buf)
+         'binary
+         'binary)
         (set-buffer-multibyte nil)))
     (setq connection (make-pgcon :process process :position 1))
     ;; send the startup packet
