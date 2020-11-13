@@ -726,7 +726,7 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
                     ((assoc fn pg:lo-functions) ; blech
                      (cdr (assoc fn pg:lo-functions)))
                     (t
-                     (error "Unknown builtin function" fn)))))
+                     (error "Unknown builtin function '%s'" fn)))))
     (pg:send-char connection ?F)
     (pg:send-char connection 0)
     (pg:send-int connection fnid 4)
