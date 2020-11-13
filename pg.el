@@ -771,7 +771,7 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
             ;; end of FunctionResult
             (?0 (return result))
             
-            (t (error "Unexpected character in pg:fn" c))))))
+            (t (error "Unexpected character '%s' in pg:fn" c))))))
 
 ;; returns an OID
 (defun pg:lo-create (connection &optional args)
