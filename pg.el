@@ -268,7 +268,8 @@
 
 ;;; Code:
 
-(require 'cl)
+(require 'cl-lib)
+(require 'cl-macs)
 
 (defvar pg:disable-type-coercion nil  
   "*Non-nil disables the type coercion mechanism.
@@ -339,9 +340,9 @@ Emacs.")
 (defvar pg:parsers '())
 
 
-(defstruct pgcon
+(cl-defstruct pgcon
   process pid secret position (binaryp nil))
-(defstruct pgresult connection status attributes tuples portal)
+(cl-defstruct pgresult connection status attributes tuples portal)
 
 (defsubst pg:flush (connection)
   (accept-process-output (pgcon-process connection)))
@@ -390,13 +391,13 @@ called 'pg-finished."
       (with-pg-transaction conn
          (pg:exec conn "DECLARE " cursor " CURSOR FOR " select-form)
          (unwind-protect 
-             (loop for res = (pg:result (pg:exec conn "FETCH 1 FROM " cursor) :tuples)
+             (cl-loop for res = (pg:result (pg:exec conn "FETCH 1 FROM " cursor) :tuples)
                    until (zerop (length res))
                    do (funcall callback res))
            (pg:exec conn "CLOSE " cursor))))))
 
 
-(defun* pg:connect (dbname user
+(cl-defun pg:connect (dbname user
                    &optional (password "") (host "localhost") (port 5432))
   "Initiate a connection with the PostgreSQL backend.
 Connect to the database DBNAME with the username USER, on PORT of
@@ -424,7 +425,7 @@ database (as an opaque type). PORT defaults to 5432, HOST to
     (pg:send connection dbname pg:SM_DATABASE)
     (pg:send connection user user-packet-length)
     (pg:flush connection)
-    (loop for c = (pg:read-char connection) do
+    (cl-loop for c = (pg:read-char connection) do
       (cond ((eq ?E c) (error "Backend error: %s" (pg:read-string connection 4096)))
             ((eq ?R c)
              (let ((areq (pg:read-net-int connection 4)))
@@ -434,7 +435,7 @@ database (as an opaque type). PORT defaults to 5432, HOST to
                      (null pg:parsers)
                      (pg:initialize-parsers connection))
                  (pg:exec connection "SET datestyle = 'ISO'")
-                 (return-from pg:connect connection))
+                 (cl-return-from pg:connect connection))
                 ((= areq pg:AUTH_REQ_PASSWORD)
                  (pg:send-int connection (+ 5 (length password)) 4)
                  (pg:send connection password)
@@ -451,7 +452,7 @@ database (as an opaque type). PORT defaults to 5432, HOST to
             (t
              (error "Problem connecting: expected an authentication response"))))))
 
-(defun* pg:exec (connection &rest args)
+(cl-defun pg:exec (connection &rest args)
   "Execute the SQL command given by the concatenation of ARGS
 on the database to which we are connected via CONNECTION. Return
 a result structure which can be decoded using `pg:result'."
@@ -463,8 +464,8 @@ a result structure which can be decoded using `pg:result'."
         (error "SQL statement too long: %s" sql))
     (pg:send connection (format "%c%s%c" ?Q sql 0))
     (pg:flush connection)
-    (loop for c = (pg:read-char connection) do
-          (case c
+    (cl-loop for c = (pg:read-char connection) do
+          (cl-case c
             ;; AsynchronousNotify
             (?A
              (let ((pid (pg:read-int connection 4))
@@ -483,7 +484,7 @@ a result structure which can be decoded using `pg:result'."
                (setf (pgresult-status result) status)
                (setf (pgresult-tuples result) (nreverse tuples))
                (setf (pgresult-attributes result) attributes)
-               (return-from pg:exec result)))
+               (cl-return-from pg:exec result)))
 
             ;; TextDataTransfer
             (?D
@@ -667,15 +668,15 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
     (setq pg:parsers '())
     (mapcar
      #'(lambda (tuple)
-       (let* ((typname (first tuple))
-              (oid (string-to-number (second tuple)))
-              (type (assoc* typname pg:type-parsers :test #'string=)))
+       (let* ((typname (cl-first tuple))
+              (oid (string-to-number (cl-second tuple)))
+              (type (cl-assoc typname pg:type-parsers :test #'string=)))
          (if (consp type)
              (push (cons oid (cdr type)) pg:parsers))))
      tuples)))
 
 (defun pg:parse (str oid)
-  (let ((parser (assoc* oid pg:parsers :test #'eq)))
+  (let ((parser (cl-assoc oid pg:parsers :test #'eq)))
     (if (consp parser)
         (funcall (cdr parser) str)
       str)))
@@ -744,9 +745,9 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
                      (error "Unknown fastpath type '%s'" arg))))
           args)
     (pg:flush connection)
-    (loop with result = '()
+    (cl-loop with result = '()
           for c = (pg:read-char connection) do
-          (case c
+          (cl-case c
              ;; ErrorResponse
             (?E (error (pg:read-string connection 4096)))
 
@@ -771,7 +772,7 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
             (?Z t)
 
             ;; end of FunctionResult
-            (?0 (return result))
+            (?0 (cl-return result))
             
             (t (error "Unexpected character '%s' in pg:fn" c))))))
 
@@ -836,7 +837,7 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
       (while (< pos (point-max))
         (pg:lo-write
          connection fdout
-         (buffer-substring-no-properties pos (min (point-max) (incf pos 1024)))))
+         (buffer-substring-no-properties pos (min (point-max) (cl-incf pos 1024)))))
       (pg:lo-close connection fdout)
       (kill-buffer buf)
       oid)))
@@ -845,8 +846,8 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
   (let* ((buf (get-buffer-create (format " *pg-%d" oid)))
          (fdin (pg:lo-open connection oid "r")))
     (with-current-buffer buf
-      (do ((str (pg:lo-read connection fdin 1024)
-                (pg:lo-read connection fdin 1024)))
+      (cl-do ((str (pg:lo-read connection fdin 1024)
+                   (pg:lo-read connection fdin 1024)))
           ((or (not str)
                (zerop (length str))))
         (insert str))
@@ -888,7 +889,7 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
 (defun pg:backend-version (conn)
   "Version an operating environment of the backend as a string."
   (let ((res (pg:exec conn "SELECT version()")))
-    (first (pg:result res :tuple 0))))
+    (cl-first (pg:result res :tuple 0))))
 
 
 ;; support routines ============================================================
@@ -900,7 +901,7 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
 (defun pg:read-attributes (connection)
   (let ((attribute-count (pg:read-net-int connection 2))
         (attributes '()))
-    (do ((i attribute-count (- i 1)))
+    (cl-do ((i attribute-count (- i 1)))
         ((zerop i) (nreverse attributes))
       (let ((type-name (pg:read-string connection pg:MAX_MESSAGE_LEN))
             (type-id   (pg:read-net-int connection 4))
@@ -923,8 +924,8 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
          (bitmap (pg:read-chars connection num-bytes))
          (correction (if (pgcon-binaryp connection) 0 -4))
          (tuples '()))
-    (do ((i 0 (+ i 1))
-         (type-ids (mapcar #'second attributes) (cdr type-ids)))
+    (cl-do ((i 0 (+ i 1))
+            (type-ids (mapcar #'cl-second attributes) (cdr type-ids)))
         ((= i num-attributes) (nreverse tuples))
       (cond ((zerop (pg:bitmap-ref bitmap i))
              (push nil tuples))
@@ -939,7 +940,7 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
   (let ((process (pgcon-process connection))
         (position (pgcon-position connection)))
     (with-current-buffer (process-buffer process)
-      (incf (pgcon-position connection))
+      (cl-incf (pgcon-position connection))
       (if (null (char-after position))
           (accept-process-output (pgcon-process connection)))
       (char-after position))))
@@ -947,27 +948,27 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
 ;; FIXME should be more careful here; the integer could overflow. I
 ;; wanna real Lisp!
 (defun pg:read-net-int (connection bytes)
-  (do ((i bytes (- i 1))
-       (accum 0))
+  (cl-do ((i bytes (- i 1))
+          (accum 0))
       ((zerop i) accum)
     (setq accum (+ (* 256 accum) (pg:read-char connection)))))
 
 (defun pg:read-int (connection bytes)
-  (do ((i bytes (- i 1))
-       (multiplier 1 (* multiplier 256))
-       (accum 0))
+  (cl-do ((i bytes (- i 1))
+          (multiplier 1 (* multiplier 256))
+          (accum 0))
       ((zerop i) accum)
-    (incf accum (* multiplier (pg:read-char connection)))))
+    (cl-incf accum (* multiplier (pg:read-char connection)))))
 
 (defun pg:read-chars (connection howmany)
-  (do ((i 0 (+ i 1))
-       (chars (make-string howmany ?.)))
+  (cl-do ((i 0 (+ i 1))
+          (chars (make-string howmany ?.)))
       ((= i howmany) chars)
     (aset chars i (pg:read-char connection))))
 
 ;; read a null-terminated string
 (defun pg:read-string (connection maxbytes)
-  (loop for i from 1 to maxbytes
+  (cl-loop for i from 1 to maxbytes
         for ch = (pg:read-char connection)
         until (= ch ?\0)
         concat (char-to-string ch)))
@@ -980,7 +981,7 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
     (while (>= i 0)
       (aset str i (% num 256))
       (setq num (floor num 256))
-      (decf i))
+      (cl-decf i))
     (process-send-string process str)))
   
 (defun pg:send-char (connection char)
@@ -1038,14 +1039,14 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
 ;;   (with-pgtest-connection
 ;;    (let (res)
 ;;      (pg:exec conn "CREATE TABLE count_test(key int, val int)")
-;;      (loop for i from 1 to 100
+;;      (cl-loop for i from 1 to 100
 ;;            for sql = (format "INSERT INTO count_test VALUES(%s, %s)"
 ;;                              i (* i i))
 ;;            do (pg:exec conn sql))
 ;;      (setq res (pg:exec conn "SELECT count(val) FROM count_test"))
-;;      (assert (= 100 (first (pg:result res :tuple 0))))
+;;      (assert (= 100 (cl-first (pg:result res :tuple 0))))
 ;;      (setq res (pg:exec conn "SELECT sum(key) FROM count_test"))
-;;      (assert (= 5050 (first (pg:result res :tuple 0))))
+;;      (assert (= 5050 (cl-first (pg:result res :tuple 0))))
 ;;      (pg:exec conn "DROP TABLE count_test"))))
 ;; 
 ;; ;; Testing for the time handling routines. Expected output is
@@ -1062,8 +1063,8 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
 ;;               "(current_timestamp, 'now', 'now')")
 ;;      (setq res (pg:exec conn "SELECT * FROM date_test"))
 ;;      (setq res (pg:result res :tuple 0))
-;;      (message "timestamp = %s" (first res))
-;;      (message "abstime = %s" (second res))
+;;      (message "timestamp = %s" (cl-first res))
+;;      (message "abstime = %s" (cl-second res))
 ;;      (message "time = %s" (third res)))
 ;;    (pg:exec conn "DROP TABLE date_test")))
 ;;   
@@ -1131,7 +1132,7 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
 ;; 
 ;; (defun pg:cleanup ()
 ;;   (interactive)
-;;   (loop for b in (buffer-list) do
+;;   (cl-loop for b in (buffer-list) do
 ;;         (if (string-match " \\*PostgreSQL\\*" (buffer-name b))
 ;;             (kill-buffer b))))
 
