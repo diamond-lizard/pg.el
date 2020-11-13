@@ -122,4 +122,4 @@ line such as `(require 'pg)' in your emacs initialization file.
   routines to return elisp floating point values instead of elisp
   integers, in order to work around possible overflow problems.
 ** Version history
-*** [[http://emarsden.chez.com/downloads/pg.el][Version 0.10 2003-02-12 by Eric Marsden]], under GNU GPL.
+ * [[http://emarsden.chez.com/downloads/pg.el][0.10 - 2003-02-12 by Eric Marsden]], under GNU GPL.
