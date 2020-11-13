@@ -739,7 +739,7 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
                      (pg:send-int connection (length arg) 4)
                      (pg:send connection arg))
                     (t
-                     (error "Unknown fastpath type" arg))))
+                     (error "Unknown fastpath type '%s'" arg))))
           args)
     (pg:flush connection)
     (loop with result = '()
