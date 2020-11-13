@@ -122,4 +122,5 @@ line such as `(require 'pg)' in your emacs initialization file.
   routines to return elisp floating point values instead of elisp
   integers, in order to work around possible overflow problems.
 ** Version history
+ * 0.11 - Bugfixes (see issues [[https://github.com/diamond-lizard/pg.el/issues/2][2]], [[https://github.com/diamond-lizard/pg.el/issues/3][3]], [[https://github.com/diamond-lizard/pg.el/issues/4][4]], and [[https://github.com/diamond-lizard/pg.el/issues/5][5]])
  * [[http://emarsden.chez.com/downloads/pg.el][0.10 - 2003-02-12 by Eric Marsden]], under GNU GPL.
