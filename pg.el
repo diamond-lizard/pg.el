@@ -722,11 +722,11 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
   (or pg:lo-initialized (pg:lo-init connection))
   (let ((fnid (cond ((integerp fn) fn)
                     ((not (stringp fn))
-                     (error "Expecting a string or an integer" fn))
+                     (error "Expecting a string or an integer, got '%s'" fn))
                     ((assoc fn pg:lo-functions) ; blech
                      (cdr (assoc fn pg:lo-functions)))
                     (t
-                     (error "Unknown builtin function" fn)))))
+                     (error "Unknown builtin function '%s'" fn)))))
     (pg:send-char connection ?F)
     (pg:send-char connection 0)
     (pg:send-int connection fnid 4)
@@ -739,7 +739,7 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
                      (pg:send-int connection (length arg) 4)
                      (pg:send connection arg))
                     (t
-                     (error "Unknown fastpath type" arg))))
+                     (error "Unknown fastpath type '%s'" arg))))
           args)
     (pg:flush connection)
     (loop with result = '()
@@ -771,7 +771,7 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
             ;; end of FunctionResult
             (?0 (return result))
             
-            (t (error "Unexpected character in pg:fn" c))))))
+            (t (error "Unexpected character '%s' in pg:fn" c))))))
 
 ;; returns an OID
 (defun pg:lo-create (connection &optional args)
@@ -784,7 +784,7 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
                      (t (error "pg:lo-create: bad mode %s" modestr))))
          (oid (pg:fn connection "lo_creat" t mode)))
     (cond ((not (integerp oid))
-           (error "Didn't return an OID" oid))
+           (error "OID '%s' is not an integer" oid))
           ((zerop oid)
            (error "Can't create large object"))
           (t oid))))
