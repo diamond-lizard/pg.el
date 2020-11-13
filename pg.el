@@ -722,7 +722,7 @@ PostgreSQL and Emacs. CONNECTION should no longer be used."
   (or pg:lo-initialized (pg:lo-init connection))
   (let ((fnid (cond ((integerp fn) fn)
                     ((not (stringp fn))
-                     (error "Expecting a string or an integer" fn))
+                     (error "Expecting a string or an integer, got '%s'" fn))
                     ((assoc fn pg:lo-functions) ; blech
                      (cdr (assoc fn pg:lo-functions)))
                     (t
